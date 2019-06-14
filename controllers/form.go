@@ -108,5 +108,10 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 		form.CanEdit = rno == form.Creator
 	}
 
+	// Login required
+	if form.RequireLogin && rno == "" {
+		u.Respond(w, u.Message(false, "Unauthorized"), 401)
+	}
+
 	u.Respond(w, form, 200)
 }
