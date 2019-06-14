@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -9,9 +10,16 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pulsejet/cerium/controllers"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	router := mux.NewRouter()
 
 	port := os.Getenv("PORT")
@@ -28,7 +36,9 @@ func main() {
 	router.HandleFunc("/api/response/{formid}", controllers.CreateResponse).Methods("POST")
 	router.HandleFunc("/api/response/{formid}", controllers.GetResponses).Methods("GET")
 
-	err := http.ListenAndServe(":"+port, router)
+	router.HandleFunc("/api/login", controllers.Login).Methods("POST", "GET")
+
+	err = http.ListenAndServe(":"+port, router)
 	if err != nil {
 		fmt.Print(err)
 	}

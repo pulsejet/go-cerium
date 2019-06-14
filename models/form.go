@@ -7,6 +7,7 @@ import (
 type Form struct {
 	Name    string `json:"name"`
 	Creator string `json:"creator"`
+	CanEdit bool   `json:"can_edit"`
 	Pages   []Page `json:"pages"`
 }
 

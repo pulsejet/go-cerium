@@ -16,31 +16,59 @@ import (
 )
 
 var CreateForm = func(w http.ResponseWriter, r *http.Request) {
+	// Check authentication
+	rno := GetRollNo(w, r)
+	if rno == "" {
+		return
+	}
+
+	// Decode the JSON form
 	form := &models.Form{}
 	err := json.NewDecoder(r.Body).Decode(form)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
 	}
 
+	// Forms without pages are not valid
+	if len(form.Pages) == 0 {
+		u.Respond(w, u.Message(false, "No Pages"), 400)
+		return
+	}
+
+	// Setup fields
 	assignUids(form)
+	form.Name = form.Pages[0].Title
 	collection := u.Collection("forms")
 
+	// Update or create new
 	var id interface{}
 	if r.Method == "PUT" {
 		cid := mux.Vars(r)["id"]
 		objID, _ := primitive.ObjectIDFromHex(cid)
-		_, err = collection.ReplaceOne(u.Context(), bson.M{"_id": objID}, form)
+		filt := bson.M{"$and": bson.A{
+			bson.M{"_id": objID},
+			bson.M{"creator": rno}}}
+
+		var res *mongo.UpdateResult
+		res, err = collection.ReplaceOne(u.Context(), filt, form)
 		id = cid
+
+		if res.MatchedCount == 0 {
+			u.Respond(w, u.Message(false, "Not Found"), 404)
+			return
+		}
 	} else {
+		form.Creator = rno
 		var res *mongo.InsertOneResult
 		res, err = collection.InsertOne(u.Context(), form)
 		id = res.InsertedID
 	}
 
+	// Check for errors and return form id
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
 	}
@@ -65,12 +93,19 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 
 	form := &models.Form{}
 
+	// Get the form
 	collection := u.Collection("forms")
 	objID, _ := primitive.ObjectIDFromHex(id)
 	err := collection.FindOne(u.Context(), bson.M{"_id": objID}).Decode(&form)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
+	}
+
+	// Check if editable
+	rno := GetRollNo(w, r)
+	if rno != "" {
+		form.CanEdit = rno == form.Creator
 	}
 
 	u.Respond(w, form, 200)

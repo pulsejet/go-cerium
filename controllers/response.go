@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"time"
 
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/pulsejet/cerium/models"
 	u "github.com/pulsejet/cerium/utils"
@@ -35,11 +38,31 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 }
 
 var GetResponses = func(w http.ResponseWriter, r *http.Request) {
+	// Check authentication
+	rno := GetRollNo(w, r)
+	if rno == "" {
+		return
+	}
+
 	formid := mux.Vars(r)["formid"]
 
-	responses := []*models.FormResponse{}
+	// Check privileges
+	collection := u.Collection("forms")
+	objID, _ := primitive.ObjectIDFromHex(formid)
+	filt := bson.M{"$and": bson.A{
+		bson.M{"_id": objID},
+		bson.M{"creator": rno}}}
+	var fopts options.CountOptions
+	fopts.SetLimit(1)
+	c, _ := collection.CountDocuments(u.Context(), filt, &fopts)
+	if c <= 0 {
+		u.Respond(w, u.Message(false, "Not Found"), 404)
+		return
+	}
 
-	collection := u.Collection("responses")
+	// Get responses
+	responses := []*models.FormResponse{}
+	collection = u.Collection("responses")
 	cur, err := collection.Find(u.Context(), bson.M{"formid": formid})
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
@@ -50,7 +73,7 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 		var elem models.FormResponse
 		err := cur.Decode(&elem)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		responses = append(responses, &elem)
 	}
