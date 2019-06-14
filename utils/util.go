@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,14 +24,14 @@ func Respond(w http.ResponseWriter, data interface{}, status int) {
 }
 
 func Database() *mongo.Database {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("CONNECTION")))
 	err = client.Connect(Context())
 	if err != nil {
 		fmt.Print(err)
 		return nil
 	}
 
-	return client.Database("testing")
+	return client.Database(os.Getenv("DATABASE"))
 }
 
 func Collection(name string) *mongo.Collection {
