@@ -48,7 +48,7 @@ var jwtKey = []byte(os.Getenv("JWT_KEY"))
 var Login = func(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// Get JWT
-		rno := GetRollNo(w, r)
+		rno := GetRollNo(w, r, true)
 		if rno == "" {
 			return
 		}
@@ -178,16 +178,20 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, profile_response, 200)
 }
 
-var GetRollNo = func(w http.ResponseWriter, r *http.Request) string {
+var GetRollNo = func(w http.ResponseWriter, r *http.Request, throw bool) string {
 	c, err := r.Cookie("token")
 	if err != nil {
 		if err == http.ErrNoCookie {
 			// If the cookie is not set, return an unauthorized status
-			w.WriteHeader(http.StatusUnauthorized)
+			if throw {
+				w.WriteHeader(http.StatusUnauthorized)
+			}
 			return ""
 		}
 		// For any other type of error, return a bad request status
-		w.WriteHeader(http.StatusBadRequest)
+		if throw {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 		return ""
 	}
 
@@ -204,17 +208,23 @@ var GetRollNo = func(w http.ResponseWriter, r *http.Request) string {
 
 	// Check invalid claims
 	if !tkn.Valid {
-		w.WriteHeader(http.StatusUnauthorized)
+		if throw {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
 		return ""
 	}
 
 	// Check invalid signatures and other errors
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
-			w.WriteHeader(http.StatusUnauthorized)
+			if throw {
+				w.WriteHeader(http.StatusUnauthorized)
+			}
 			return ""
 		}
-		w.WriteHeader(http.StatusBadRequest)
+		if throw {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 		return ""
 	}
 

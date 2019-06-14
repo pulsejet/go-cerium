@@ -17,7 +17,7 @@ import (
 
 var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
-	rno := GetRollNo(w, r)
+	rno := GetRollNo(w, r, true)
 	if rno == "" {
 		return
 	}
@@ -103,7 +103,7 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if editable
-	rno := GetRollNo(w, r)
+	rno := GetRollNo(w, r, false)
 	if rno != "" {
 		form.CanEdit = rno == form.Creator
 	}

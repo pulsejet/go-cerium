@@ -39,7 +39,7 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 
 var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
-	rno := GetRollNo(w, r)
+	rno := GetRollNo(w, r, true)
 	if rno == "" {
 		return
 	}
