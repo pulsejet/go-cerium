@@ -5,10 +5,12 @@ import (
 )
 
 type Form struct {
-	Name    string `json:"name"`
-	Creator string `json:"creator"`
-	CanEdit bool   `json:"can_edit"`
-	Pages   []Page `json:"pages"`
+	Name         string `json:"name"`
+	Creator      string `json:"creator"`
+	CanEdit      bool   `json:"can_edit"`
+	Pages        []Page `json:"pages"`
+	RequireLogin bool   `json:"require_login"`
+	CollectEmail bool   `json:"collect_email"`
 }
 
 type Page struct {
@@ -26,5 +28,6 @@ type Widget struct {
 type FormResponse struct {
 	FormId    string                 `json:"form_id"`
 	Timestamp time.Time              `json:"timestamp"`
+	Filler    string                 `json:"filler"`
 	Responses map[string]interface{} `json:"responses"`
 }

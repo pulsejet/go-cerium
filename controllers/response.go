@@ -20,6 +20,19 @@ import (
 var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	formid := mux.Vars(r)["formid"]
 
+	// Check if login is required
+	rno := GetRollNo(w, r, false)
+	collection := u.Collection("forms")
+	objID, _ := primitive.ObjectIDFromHex(formid)
+	filt := bson.M{"_id": objID}
+	form := &models.Form{}
+	collection.FindOne(u.Context(), filt).Decode(form)
+	if form.RequireLogin && rno == "" {
+		u.Respond(w, u.Message(false, "Not Found"), 401)
+		return
+	}
+
+	// Save the response
 	response := &models.FormResponse{}
 	err := json.NewDecoder(r.Body).Decode(response)
 	if err != nil {
@@ -29,10 +42,13 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 
 	response.FormId = formid
 	response.Timestamp = time.Now()
+	if form.CollectEmail {
+		response.Filler = rno
+	}
 
-	collection := u.Collection("responses")
-	res, err := collection.InsertOne(u.Context(), response)
-	id := res.InsertedID
+	collection = u.Collection("responses")
+	cur, _ := collection.InsertOne(u.Context(), response)
+	id := cur.InsertedID
 
 	u.Respond(w, map[string]interface{}{"id": id}, 200)
 }
