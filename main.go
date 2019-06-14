@@ -12,9 +12,7 @@ import (
 )
 
 func main() {
-
 	router := mux.NewRouter()
-	// router.Use(app.JwtAuthentication) //attach JWT auth middleware
 
 	port := os.Getenv("PORT")
 	if port == "" {
