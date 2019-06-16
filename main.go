@@ -34,7 +34,7 @@ func main() {
 	router.HandleFunc("/api/form/{id}", controllers.CreateForm).Methods("PUT")
 	router.HandleFunc("/api/form/{id}", controllers.GetForm).Methods("GET")
 	router.HandleFunc("/api/response/{formid}", controllers.CreateResponse).Methods("POST")
-	router.HandleFunc("/api/response/{formid}", controllers.GetResponses).Methods("GET")
+	router.HandleFunc("/api/responses/{formid}", controllers.GetResponses).Methods("POST")
 
 	router.HandleFunc("/api/login", controllers.Login).Methods("POST", "GET")
 

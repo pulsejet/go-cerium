@@ -3,11 +3,10 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,6 +15,10 @@ import (
 	"github.com/pulsejet/cerium/models"
 	u "github.com/pulsejet/cerium/utils"
 )
+
+type ResponsesRequest struct {
+	Type string `json:"type"`
+}
 
 var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	formid := mux.Vars(r)["formid"]
@@ -42,8 +45,10 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 
 	response.FormId = formid
 	response.Timestamp = time.Now()
+	response.Responses["timestamp"] = response.Timestamp
 	if form.CollectEmail {
 		response.Filler = rno
+		response.Responses["filler"] = response.Filler
 	}
 
 	collection = u.Collection("responses")
@@ -63,16 +68,15 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 	formid := mux.Vars(r)["formid"]
 
 	// Check privileges
+	form := &models.Form{}
 	collection := u.Collection("forms")
 	objID, _ := primitive.ObjectIDFromHex(formid)
 	filt := bson.M{"$and": bson.A{
 		bson.M{"_id": objID},
 		bson.M{"creator": rno}}}
-	var fopts options.CountOptions
-	fopts.SetLimit(1)
-	c, _ := collection.CountDocuments(u.Context(), filt, &fopts)
-	if c <= 0 {
-		u.Respond(w, u.Message(false, "Not Found"), 404)
+	err := collection.FindOne(u.Context(), filt).Decode(&form)
+	if err != nil {
+		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
 	}
 
@@ -85,6 +89,7 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Iterate and collect responses
 	for cur.Next(context.TODO()) {
 		var elem models.FormResponse
 		err := cur.Decode(&elem)
@@ -94,5 +99,72 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 		responses = append(responses, &elem)
 	}
 
+	// Postprocess if wanted
+	rq := &ResponsesRequest{}
+	json.NewDecoder(r.Body).Decode(rq)
+	if rq.Type == "array" {
+		u.Respond(w, arrayResponse(form, responses), 200)
+		return
+	}
+
 	u.Respond(w, responses, 200)
+}
+
+func arrayResponse(f *models.Form, r []*models.FormResponse) [][]string {
+	// Get form fields
+	fields, fnames := formFields(f)
+
+	// Make grand array of arrays
+	a := make([][]string, len(r)+1)
+
+	// Construct header
+	a[0] = make([]string, len(fields))
+	for j := range fields {
+		a[0][j] = fnames[fields[j]]
+	}
+
+	// Iterate each response
+	for iw := range r {
+		i := iw + 1
+		a[i] = make([]string, len(fields))
+
+		for j := range fields {
+			cf := r[iw].Responses[fields[j]]
+			switch cf.(type) {
+			default:
+				a[i][j] = fmt.Sprintf("%s", cf)
+			case nil:
+				a[i][j] = ""
+			case primitive.DateTime:
+				a[i][j] = cf.(primitive.DateTime).Time().String()
+			}
+		}
+	}
+
+	return a
+}
+
+func formFields(f *models.Form) ([]string, map[string]string) {
+	// Initialize
+	m := map[string]string{}
+	a := make([]string, 0)
+
+	// Add extra fields
+	a = append(a, "timestamp")
+	m["timestamp"] = "Timestamp"
+
+	if f.CollectEmail {
+		a = append(a, "filler")
+		m["filler"] = "Filler"
+	}
+
+	// Construct fields
+	for pi := range f.Pages {
+		for wi := range f.Pages[pi].Widgets {
+			m[f.Pages[pi].Widgets[wi].Uid] = f.Pages[pi].Widgets[wi].Props["question"].(string)
+			a = append(a, f.Pages[pi].Widgets[wi].Uid)
+		}
+	}
+
+	return a, m
 }
