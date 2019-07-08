@@ -133,10 +133,12 @@ func arrayResponse(f *models.Form, r []*models.FormResponse) [][]string {
 			switch cf.(type) {
 			default:
 				a[i][j] = fmt.Sprintf("%s", cf)
+			case float32, float64:
+				a[i][j] = fmt.Sprintf("%9.f", cf)
 			case nil:
 				a[i][j] = ""
 			case primitive.DateTime:
-				a[i][j] = cf.(primitive.DateTime).Time().String()
+				a[i][j] = primitiveToTime(cf.(primitive.DateTime)).String()
 			}
 		}
 	}
@@ -167,4 +169,9 @@ func formFields(f *models.Form) ([]string, map[string]string) {
 	}
 
 	return a, m
+}
+
+// Time returns the date as a time type.
+func primitiveToTime(d primitive.DateTime) time.Time {
+	return time.Unix(int64(d)/1000, int64(d)%1000*1000000)
 }
