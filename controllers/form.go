@@ -108,9 +108,16 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 		form.CanEdit = rno == form.Creator
 	}
 
+	// Check if already filled
+	if form.SingleResponse && HasFilledAnon(id, rno) {
+		u.Respond(w, u.Message(false, "User has already filled this form"), 403)
+		return
+	}
+
 	// Login required
 	if form.RequireLogin && rno == "" {
-		u.Respond(w, u.Message(false, "Unauthorized"), 401)
+		u.Respond(w, u.Message(false, "Unauthorized: Please login to continue"), 401)
+		return
 	}
 
 	u.Respond(w, form, 200)

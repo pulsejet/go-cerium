@@ -53,23 +53,9 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if form already filled for single response
-	if form.SingleResponse {
-		// Filter matching form id and filler
-		collection = u.Collection("filler")
-		anonExist := collection.FindOne(u.Context(), bson.M{
-			"$and": bson.A{
-				bson.M{"formid": formid},
-				bson.M{"filler": rno}}})
-
-		// Try to get the object
-		anonObj := &models.FormAnonResponder{}
-		err = anonExist.Decode(anonObj)
-
-		// Person has already responded if there was no error
-		if err == nil {
-			u.Respond(w, u.Message(false, "Only one response allowed per person!"), 403)
-			return
-		}
+	if form.SingleResponse && HasFilledAnon(formid, rno) {
+		u.Respond(w, u.Message(false, "User has already filled this form"), 403)
+		return
 	}
 
 	// Create an anon filler object
@@ -207,4 +193,19 @@ func formFields(f *models.Form) ([]string, map[string]string) {
 // Time returns the date as a time type.
 func primitiveToTime(d primitive.DateTime) time.Time {
 	return time.Unix(int64(d)/1000, int64(d)%1000*1000000)
+}
+
+// HasFilledAnon returns true if the person has already filled this form
+func HasFilledAnon(formid string, filler string) bool {
+	// Filter matching form id and filler
+	collection := u.Collection("filler")
+	anonExist := collection.FindOne(u.Context(), bson.M{
+		"$and": bson.A{
+			bson.M{"formid": formid},
+			bson.M{"filler": filler}}})
+
+	// Try to get the object
+	anonObj := &models.FormAnonResponder{}
+	err := anonExist.Decode(anonObj)
+	return err == nil
 }
