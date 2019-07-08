@@ -109,7 +109,7 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if already filled
-	if form.SingleResponse && HasFilledAnon(id, rno) {
+	if !form.CanEdit && form.SingleResponse && HasFilledAnon(id, rno) {
 		u.Respond(w, u.Message(false, "User has already filled this form"), 403)
 		return
 	}
