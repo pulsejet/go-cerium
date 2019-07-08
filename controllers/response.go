@@ -43,6 +43,7 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fill in the responses
 	response.FormId = formid
 	response.Timestamp = time.Now()
 	response.Responses["timestamp"] = response.Timestamp
@@ -51,6 +52,38 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 		response.Responses["filler"] = response.Filler
 	}
 
+	// Check if form already filled for single response
+	if form.SingleResponse {
+		// Filter matching form id and filler
+		collection = u.Collection("filler")
+		anonExist := collection.FindOne(u.Context(), bson.M{
+			"$and": bson.A{
+				bson.M{"formid": formid},
+				bson.M{"filler": rno}}})
+
+		// Try to get the object
+		anonObj := &models.FormAnonResponder{}
+		err = anonExist.Decode(anonObj)
+
+		// Person has already responded if there was no error
+		if err == nil {
+			u.Respond(w, u.Message(false, "Only one response allowed per person!"), 403)
+			return
+		}
+	}
+
+	// Create an anon filler object
+	if form.RequireLogin {
+		anonResponse := &models.FormAnonResponder{}
+		anonResponse.Filler = rno
+		anonResponse.FormId = formid
+
+		// Add the anon filler to fillers collection
+		collection = u.Collection("filler")
+		collection.InsertOne(u.Context(), anonResponse)
+	}
+
+	// Add the document to the responses collection
 	collection = u.Collection("responses")
 	cur, _ := collection.InsertOne(u.Context(), response)
 	id := cur.InsertedID
