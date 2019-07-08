@@ -230,3 +230,15 @@ var GetRollNo = func(w http.ResponseWriter, r *http.Request, throw bool) string 
 
 	return claims.RollNumber
 }
+
+var Logout = func(w http.ResponseWriter, r *http.Request) {
+	// Finally, we set the client cookie for "token" as the JWT we just generated
+	http.SetCookie(w, &http.Cookie{
+		Name:    "token",
+		Value:   "",
+		Expires: time.Unix(0, 0),
+	})
+
+	// Return profile
+	u.Respond(w, "", 204)
+}

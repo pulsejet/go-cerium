@@ -37,6 +37,7 @@ func main() {
 	router.HandleFunc("/api/responses/{formid}", controllers.GetResponses).Methods("POST")
 
 	router.HandleFunc("/api/login", controllers.Login).Methods("POST", "GET")
+	router.HandleFunc("/api/logout", controllers.Logout).Methods("GET")
 
 	err = http.ListenAndServe(":"+port, router)
 	if err != nil {
