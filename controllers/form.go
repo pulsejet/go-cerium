@@ -11,8 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/pulsejet/cerium/models"
-	u "github.com/pulsejet/cerium/utils"
+	"github.com/pulsejet/go-cerium/models"
+	u "github.com/pulsejet/go-cerium/utils"
 )
 
 var CreateForm = func(w http.ResponseWriter, r *http.Request) {

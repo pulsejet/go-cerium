@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pulsejet/cerium/controllers"
+	"github.com/pulsejet/go-cerium/controllers"
 
 	"github.com/joho/godotenv"
 )

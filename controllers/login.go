@@ -12,7 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	u "github.com/pulsejet/cerium/utils"
+	u "github.com/pulsejet/go-cerium/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

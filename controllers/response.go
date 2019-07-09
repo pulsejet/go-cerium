@@ -12,8 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/pulsejet/cerium/models"
-	u "github.com/pulsejet/cerium/utils"
+	"github.com/pulsejet/go-cerium/models"
+	u "github.com/pulsejet/go-cerium/utils"
 )
 
 type ResponsesRequest struct {
