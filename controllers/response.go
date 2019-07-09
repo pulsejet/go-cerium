@@ -74,6 +74,9 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	cur, _ := collection.InsertOne(u.Context(), response)
 	id := cur.InsertedID
 
+	// Log to console
+	log.Println(rno, ": new response for form", formid)
+
 	u.Respond(w, map[string]interface{}{"id": id}, 200)
 }
 

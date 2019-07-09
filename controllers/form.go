@@ -73,6 +73,9 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log to console
+	log.Println(rno, ": new form", id)
+
 	u.Respond(w, map[string]interface{}{"id": id}, 200)
 }
 
