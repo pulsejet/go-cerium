@@ -27,7 +27,7 @@ func main() {
 		port = "8000"
 	}
 
-	fmt.Println(port)
+	fmt.Println("Started server on port", port)
 	rand.Seed(time.Now().UnixNano())
 
 	router.HandleFunc("/api/form", controllers.CreateForm).Methods("POST")
