@@ -12,6 +12,7 @@ type Form struct {
 	RequireLogin   bool   `json:"require_login"`
 	CollectEmail   bool   `json:"collect_email"`
 	SingleResponse bool   `json:"single_response"`
+	ResponseToken  string `json:"token"`
 }
 
 type Page struct {

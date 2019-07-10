@@ -45,7 +45,7 @@ func Context() context.Context {
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 
-func randSeq(n int) string {
+func RandSeq(n int) string {
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
@@ -54,5 +54,5 @@ func randSeq(n int) string {
 }
 
 func RandomId() string {
-	return randSeq(24)
+	return RandSeq(24)
 }
