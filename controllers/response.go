@@ -99,7 +99,6 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 	objID, _ := primitive.ObjectIDFromHex(formid)
 	filt := bson.M{"$and": bson.A{
 		bson.M{"_id": objID},
-		bson.M{"creator": rno},
 		bson.M{"responsetoken":token}}}
 	err := collection.FindOne(u.Context(), filt).Decode(&form)
 	if err != nil {
