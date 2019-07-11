@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -87,7 +88,10 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formid := mux.Vars(r)["formid"]
+	id := mux.Vars(r)["formid"]
+	data := strings.Split(id, "-")
+	formid := data[0]
+	token := data[1]
 
 	// Check privileges
 	form := &models.Form{}
@@ -95,7 +99,7 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 	objID, _ := primitive.ObjectIDFromHex(formid)
 	filt := bson.M{"$and": bson.A{
 		bson.M{"_id": objID},
-		bson.M{"creator": rno}}}
+		bson.M{"responsetoken":token}}}
 	err := collection.FindOne(u.Context(), filt).Decode(&form)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)

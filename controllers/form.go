@@ -40,6 +40,8 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	// Setup fields
 	assignUids(form)
 	form.Name = form.Pages[0].Title
+	responseToken := u.RandSeq(50)
+	form.ResponseToken = responseToken
 	collection := u.Collection("forms")
 
 	// Update or create new
@@ -76,7 +78,7 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	// Log to console
 	log.Println(rno, ": new form", id)
 
-	u.Respond(w, map[string]interface{}{"id": id}, 200)
+	u.Respond(w, map[string]interface{}{"id": id, "token": responseToken}, 200)
 }
 
 /** Set random UID for each widget */
