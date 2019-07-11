@@ -127,3 +127,18 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 
 	u.Respond(w, form, 200)
 }
+
+var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
+	log.Println("GetAllForms called")
+	// Get roll number
+	rno := GetRollNo(w, r, false)
+
+	// Get all form ids for this roll number 
+	collection := u.Collection("forms")
+	values, err := collection.Find(u.Context(), bson.M{"creator": rno})
+	if err != nil {
+		u.Respond(w, u.Message(false, err.Error()), 400)
+		return
+	}
+	log.Println(values)
+}
