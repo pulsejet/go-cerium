@@ -98,19 +98,11 @@ func TestNewFormCreate(t *testing.T) {
 	// Create dummy form
 	form := createDummyForm()
 
-	tempR := httptest.NewRecorder()
-	c.SetCookie(tempR, rno)
-
 	handler := http.HandlerFunc(c.CreateForm)
 	
-	formJson, err := json.Marshal(form)
+	formJson, _ := json.Marshal(form)
 
-	req, err := http.NewRequest("POST", "/api/form", bytes.NewBuffer(formJson))
-	checkError(err, t)
-	
-	req.Header.Add("Cookie", tempR.HeaderMap["Set-Cookie"][0])
-	req.Header.Set("Content-Type", "application/json")
-
+	req := requestAPI("POST", "/api/form", formJson)
 	rr := httptest.NewRecorder()
 
 	// Fire the request
@@ -122,7 +114,8 @@ func TestNewFormCreate(t *testing.T) {
 	}
 
 	dbForm := &models.Form{}
-	err = u.Collection("forms").FindOne(u.Context(), bson.M{"creator":rno}).Decode(&dbForm)
+	err := u.Collection("forms").FindOne(u.Context(), bson.M{"creator":rno}).Decode(&dbForm)
+	checkError(err, t)
 	if dbForm.Name != "Test Form" {
 		t.Errorf("Form in db different from one created in test")
 	}
@@ -133,17 +126,12 @@ func TestEmptyForm(t *testing.T) {
 	// Create dummy form
 	form := createDummyForm()
 
-	tempR := httptest.NewRecorder()
-	c.SetCookie(tempR, rno)
-
 	handler := http.HandlerFunc(c.CreateForm)
 
 	// Empty the pages and create request
 	form.Pages = []models.Page{}
 	formJson, _ := json.Marshal(form)
-	request, _ := http.NewRequest("POST", "/api/form", bytes.NewBuffer(formJson))
-	request.Header.Add("Cookie", tempR.HeaderMap["Set-Cookie"][0])
-	request.Header.Set("Content-Type", "application/json")
+	request := requestAPI("POST", "/api/form", formJson)
 
 	recorder := httptest.NewRecorder()
 	
@@ -153,6 +141,17 @@ func TestEmptyForm(t *testing.T) {
 	if status := recorder.Code; status != http.StatusBadRequest {
 		t.Errorf("Status code differs. Expected %d Got %d instead", http.StatusBadRequest, status)
 	}
+}
+
+func requestAPI(Method string, API string, formString []byte) *http.Request {	
+	tempR := httptest.NewRecorder()
+	c.SetCookie(tempR, rno)
+
+	request, _ := http.NewRequest(Method, API, bytes.NewBuffer(formString))
+	request.Header.Add("Cookie", tempR.HeaderMap["Set-Cookie"][0])
+	request.Header.Set("Content-Type", "application/json")
+
+	return request
 }
 
 func checkError(err error, t *testing.T) {
