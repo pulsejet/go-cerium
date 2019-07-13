@@ -1,4 +1,4 @@
-package main_test
+package controllers_test
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ type ProfileResponse struct {
 }
 
 func setup() {
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	rno = os.Getenv("TEST_ROLL")
 	if err != nil {
 		fmt.Errorf("Error loading .env file")
