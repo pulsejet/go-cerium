@@ -96,26 +96,57 @@ func TestProfile(t *testing.T) {
 func TestNewFormCreate(t *testing.T) {
 	// Create dummy form
 	form := createDummyForm()
-	formJson, err := json.Marshal(form)
 
-	req, err := http.NewRequest("POST", "/api/form", bytes.NewBuffer(formJson))
-	checkError(err, t)
+	tempR := httptest.NewRecorder()
+	c.SetCookie(tempR, rno)
 
-	rr := httptest.NewRecorder()
-	c.SetCookie(rr, rno)
+	handler := http.HandlerFunc(c.CreateForm)
 	
-	req.Header.Add("Cookie", rr.HeaderMap["Set-Cookie"][0])
-	req.Header.Set("Content-Type", "application/json")
+	// Tests creation of new form by user
+	t.Run("CreateForm", func(t *testing.T){
+		formJson, err := json.Marshal(form)
 
-	//Make the handler function satisfy http.Handler
-	http.HandlerFunc(c.CreateForm).ServeHTTP(rr, req)
+		req, err := http.NewRequest("POST", "/api/form", bytes.NewBuffer(formJson))
+		checkError(err, t)
+		
+		req.Header.Add("Cookie", tempR.HeaderMap["Set-Cookie"][0])
+		req.Header.Set("Content-Type", "application/json")
 	
-	fmt.Println(rr.Body)
+		rr := httptest.NewRecorder()
 
-	//Confirm the response has the right status code
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("Status code differs. Expected %d .\n Got %d instead", http.StatusOK, status)
-	}
+		// Fire the request
+		handler.ServeHTTP(rr, req)
+
+		//Confirm the response has the right status code
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("Status code differs. Expected %d .\n Got %d instead", http.StatusOK, status)
+		}
+
+		dbForm := &models.Form{}
+		err = u.Collection("forms").FindOne(u.Context(), bson.M{"creator":rno}).Decode(&dbForm)
+		if dbForm.Name != "Test Form" {
+			t.Errorf("Form in db different from one created in test")
+		}
+	})
+
+	// Tests empty form are not created, and status 400 is sent
+	t.Run("CreateEmptyForm", func(t *testing.T){
+		// Empty the pages and create request
+		form.Pages = []models.Page{}
+		formJson, _ := json.Marshal(form)
+		request, _ := http.NewRequest("POST", "/api/form", bytes.NewBuffer(formJson))
+		request.Header.Add("Cookie", tempR.HeaderMap["Set-Cookie"][0])
+		request.Header.Set("Content-Type", "application/json")
+
+		recorder := httptest.NewRecorder()
+		
+		handler.ServeHTTP(recorder, request)
+
+		//Confirm the response has the right status code
+		if status := recorder.Code; status != http.StatusBadRequest {
+			t.Errorf("Status code differs. Expected %d Got %d instead", http.StatusBadRequest, status)
+		}
+	})
 }
 
 func checkError(err error, t *testing.T) {
