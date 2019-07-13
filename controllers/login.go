@@ -146,33 +146,8 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	_, err = collection.ReplaceOne(
 		u.Context(), bson.M{"rollnumber": rno}, profile_response, &ropts)
 
-	// Declare the expiration time of the token
-	expirationTime := time.Now().Add(24 * time.Hour)
-
-	// Create the JWT claims
-	claims := &Claims{
-		RollNumber: profile_response.RollNumber,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		},
-	}
-
-	// Declare the token with the algorithm used for signing, and the claims
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Create the JWT string
-	tokenString, err := token.SignedString(jwtKey)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Finally, we set the client cookie for "token" as the JWT we just generated
-	http.SetCookie(w, &http.Cookie{
-		Name:    "token",
-		Value:   tokenString,
-		Expires: expirationTime,
-	})
+	// Set cookie
+	SetCookie(w, rno)
 
 	// Return profile
 	u.Respond(w, profile_response, 200)
@@ -241,4 +216,34 @@ var Logout = func(w http.ResponseWriter, r *http.Request) {
 
 	// Return profile
 	u.Respond(w, "", 204)
+}
+
+var SetCookie= func(w http.ResponseWriter, rno string) {
+	// Declare the expiration time of the token
+	expirationTime := time.Now().Add(24 * time.Hour)
+
+	// Create the JWT claims
+	claims := &Claims{
+		RollNumber: rno,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	// Declare the token with the algorithm used for signing, and the claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Create the JWT string
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Finally, we set the client cookie for "token" as the JWT we just generated
+	http.SetCookie(w, &http.Cookie{
+		Name:    "token",
+		Value:   tokenString,
+		Expires: expirationTime,
+	})
 }
