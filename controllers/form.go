@@ -131,43 +131,54 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 }
 
 var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
-	log.Println("GetAllForms called")
 	// Get roll number
 	rno := GetRollNo(w, r, false)
 
-	var ids []string
+	// To extrach data out of collection.Find() 
+	type formDB struct {
+		ID		primitive.ObjectID		`bson:"_id"`
+		Name 	string					`bson:"name"`
+	}
 
-	// Get all form ids for this roll number 
+	// To send data to frontend	
+	type formDetails struct {
+		ID		string	
+		Name 	string
+	}
+
+	var forms []formDetails
+
 	collection := u.Collection("forms")
 	count, err := collection.CountDocuments(u.Context(), bson.M{"creator": rno})
 	if count == 0 {
-		u.Respond(w, map[string]interface{}{"ids":ids}, 200)
+		u.Respond(w, forms, 200)
 	}
 
-	//reqFields = {"_id":1, "creator":0, "canedit":0, "pages":0}
-
-	options := &options.FindOptions{
-		Projection: interface{}{"_id":1},
+	// To Set which fields are required in the output
+	type fields struct {
+		ID		int		`bson:"_id"`
+		Name 	int		`bson:"name"`
 	}
-	values, err := collection.Find(u.Context(), bson.M{"creator": rno}, options)
+	projection := fields{ID:1,Name:1,}
+	opt := &options.FindOptions{}
+	opt.SetProjection(projection)
+
+	// Get all form ids for this roll number 
+	values, err := collection.Find(u.Context(), bson.M{"creator": rno}, opt)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
 	}
 
-	var form_ids [](*string)
-
 	// Iterate and collect responses
 	for values.Next(context.TODO()) {
-		var elem primitive.ObjectID
-//		log.Println(values.Pretty())
+		var elem formDB
 		err := values.Decode(&elem)
-		log.Println(elem)
 		if err != nil {
 			log.Println(err)
 		}
-		//form_ids = append(form_ids, &elem)
+		forms = append(forms, formDetails{ID: (&elem).ID.Hex(), Name: (&elem).Name})
 	}
-	log.Println(form_ids)
-	u.Respond(w, map[string]interface{}{"ids":form_ids}, 200)
+	log.Println("all forms created by ", rno, " sent")
+	u.Respond(w, forms, 200)
 }
