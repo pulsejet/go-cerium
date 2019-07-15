@@ -16,6 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/gorilla/mux"
 )
 
 var rno string
@@ -140,6 +142,44 @@ func TestEmptyForm(t *testing.T) {
 	//Confirm the response has the right status code
 	if status := recorder.Code; status != http.StatusBadRequest {
 		t.Errorf("Status code differs. Expected %d Got %d instead", http.StatusBadRequest, status)
+	}
+}
+
+// Tests for editing form
+func TestEditForm(t *testing.T) {
+	// Create dummy form
+	form := createDummyForm()
+	form.Pages[0].Title = "Edit Form"
+	form.Name = "Edit Form"
+	form.Creator = rno
+
+	res, _ := u.Collection("forms").InsertOne(u.Context(), form)
+	id := res.InsertedID.(primitive.ObjectID)
+	
+	r := mux.NewRouter()
+	r.HandleFunc("/api/form/{id}", c.CreateForm)
+
+	// Empty the pages and create request
+	form.Pages[0].Title = "Post Edit Form"
+	formJson, _ := json.Marshal(form)
+	request := requestAPI("PUT", "/api/form/"+id.Hex(), formJson)
+
+	recorder := httptest.NewRecorder()
+	
+	r.ServeHTTP(recorder, request)
+
+	//Confirm the response has the right status code
+	if status := recorder.Code; status != http.StatusOK {
+		t.Errorf("Status code differs. Expected %d Got %d instead", http.StatusOK, status)
+	}
+
+	// Make sure that form has been edited
+	dbForm := &models.Form{}
+	err := u.Collection("forms").FindOne(u.Context(), 
+		bson.M{"$and": bson.A{bson.M{"_id": id}, bson.M{"creator": rno}}}).Decode(&dbForm)
+	checkError(err, t)
+	if dbForm.Name != "Post Edit Form" {
+		t.Errorf("Form in db different from one edited in test")
 	}
 }
 
