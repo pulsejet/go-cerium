@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gorilla/mux"
 
@@ -133,12 +135,39 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	// Get roll number
 	rno := GetRollNo(w, r, false)
 
+	var ids []string
+
 	// Get all form ids for this roll number 
 	collection := u.Collection("forms")
-	values, err := collection.Find(u.Context(), bson.M{"creator": rno})
+	count, err := collection.CountDocuments(u.Context(), bson.M{"creator": rno})
+	if count == 0 {
+		u.Respond(w, map[string]interface{}{"ids":ids}, 200)
+	}
+
+	//reqFields = {"_id":1, "creator":0, "canedit":0, "pages":0}
+
+	options := &options.FindOptions{
+		Projection: interface{}{"_id":1},
+	}
+	values, err := collection.Find(u.Context(), bson.M{"creator": rno}, options)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
 	}
-	log.Println(values)
+
+	var form_ids [](*string)
+
+	// Iterate and collect responses
+	for values.Next(context.TODO()) {
+		var elem primitive.ObjectID
+//		log.Println(values.Pretty())
+		err := values.Decode(&elem)
+		log.Println(elem)
+		if err != nil {
+			log.Println(err)
+		}
+		//form_ids = append(form_ids, &elem)
+	}
+	log.Println(form_ids)
+	u.Respond(w, map[string]interface{}{"ids":form_ids}, 200)
 }
