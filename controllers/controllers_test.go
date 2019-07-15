@@ -1,4 +1,4 @@
-package main_test
+package controllers_test
 
 import (
 	"fmt"
@@ -16,6 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/gorilla/mux"
 )
 
 var rno string
@@ -30,7 +32,7 @@ type ProfileResponse struct {
 }
 
 func setup() {
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	rno = os.Getenv("TEST_ROLL")
 	if err != nil {
 		fmt.Errorf("Error loading .env file")
@@ -93,29 +95,103 @@ func TestProfile(t *testing.T) {
 	checkError(err, t)
 }
 
+// Tests creation of new form by user
 func TestNewFormCreate(t *testing.T) {
 	// Create dummy form
 	form := createDummyForm()
-	formJson, err := json.Marshal(form)
 
-	req, err := http.NewRequest("POST", "/api/form", bytes.NewBuffer(formJson))
-	checkError(err, t)
+	handler := http.HandlerFunc(c.CreateForm)
+	
+	formJson, _ := json.Marshal(form)
 
+	req := requestAPI("POST", "/api/form", formJson)
 	rr := httptest.NewRecorder()
-	c.SetCookie(rr, rno)
-	
-	req.Header.Add("Cookie", rr.HeaderMap["Set-Cookie"][0])
-	req.Header.Set("Content-Type", "application/json")
 
-	//Make the handler function satisfy http.Handler
-	http.HandlerFunc(c.CreateForm).ServeHTTP(rr, req)
-	
-	fmt.Println(rr.Body)
+	// Fire the request
+	handler.ServeHTTP(rr, req)
 
 	//Confirm the response has the right status code
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Status code differs. Expected %d .\n Got %d instead", http.StatusOK, status)
 	}
+
+	dbForm := &models.Form{}
+	err := u.Collection("forms").FindOne(u.Context(), bson.M{"creator":rno}).Decode(&dbForm)
+	checkError(err, t)
+	if dbForm.Name != "Test Form" {
+		t.Errorf("Form in db different from one created in test")
+	}
+}
+
+// Tests empty form are not created, and status 400 is sent
+func TestEmptyForm(t *testing.T) {
+	// Create dummy form
+	form := createDummyForm()
+
+	handler := http.HandlerFunc(c.CreateForm)
+
+	// Empty the pages and create request
+	form.Pages = []models.Page{}
+	formJson, _ := json.Marshal(form)
+	request := requestAPI("POST", "/api/form", formJson)
+
+	recorder := httptest.NewRecorder()
+	
+	handler.ServeHTTP(recorder, request)
+
+	//Confirm the response has the right status code
+	if status := recorder.Code; status != http.StatusBadRequest {
+		t.Errorf("Status code differs. Expected %d Got %d instead", http.StatusBadRequest, status)
+	}
+}
+
+// Tests for editing form
+func TestEditForm(t *testing.T) {
+	// Create dummy form
+	form := createDummyForm()
+	form.Pages[0].Title = "Edit Form"
+	form.Name = "Edit Form"
+	form.Creator = rno
+
+	res, _ := u.Collection("forms").InsertOne(u.Context(), form)
+	id := res.InsertedID.(primitive.ObjectID)
+	
+	r := mux.NewRouter()
+	r.HandleFunc("/api/form/{id}", c.CreateForm)
+
+	// Empty the pages and create request
+	form.Pages[0].Title = "Post Edit Form"
+	formJson, _ := json.Marshal(form)
+	request := requestAPI("PUT", "/api/form/"+id.Hex(), formJson)
+
+	recorder := httptest.NewRecorder()
+	
+	r.ServeHTTP(recorder, request)
+
+	//Confirm the response has the right status code
+	if status := recorder.Code; status != http.StatusOK {
+		t.Errorf("Status code differs. Expected %d Got %d instead", http.StatusOK, status)
+	}
+
+	// Make sure that form has been edited
+	dbForm := &models.Form{}
+	err := u.Collection("forms").FindOne(u.Context(), 
+		bson.M{"$and": bson.A{bson.M{"_id": id}, bson.M{"creator": rno}}}).Decode(&dbForm)
+	checkError(err, t)
+	if dbForm.Name != "Post Edit Form" {
+		t.Errorf("Form in db different from one edited in test")
+	}
+}
+
+func requestAPI(Method string, API string, formString []byte) *http.Request {	
+	tempR := httptest.NewRecorder()
+	c.SetCookie(tempR, rno)
+
+	request, _ := http.NewRequest(Method, API, bytes.NewBuffer(formString))
+	request.Header.Add("Cookie", tempR.HeaderMap["Set-Cookie"][0])
+	request.Header.Set("Content-Type", "application/json")
+
+	return request
 }
 
 func checkError(err error, t *testing.T) {
