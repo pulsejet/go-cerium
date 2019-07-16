@@ -43,7 +43,6 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	// Setup fields
 	assignUids(form)
 	form.Name = form.Pages[0].Title
-	form.Timestamp = time.Now()
 	responseToken := u.RandSeq(50)
 	form.ResponseToken = responseToken
 	collection := u.Collection("forms")
@@ -67,6 +66,7 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		form.Creator = rno
+		form.Timestamp = time.Now()
 		var res *mongo.InsertOneResult
 		res, err = collection.InsertOne(u.Context(), form)
 		id = res.InsertedID
