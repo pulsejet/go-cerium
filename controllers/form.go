@@ -138,12 +138,14 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	type formDB struct {
 		ID		primitive.ObjectID		`bson:"_id"`
 		Name 	string					`bson:"name"`
+		Token 	string					`bson:"responsetoken"`
 	}
 
 	// To send data to frontend	
 	type formDetails struct {
 		ID		string	
 		Name 	string
+		Token 	string
 	}
 
 	var forms []formDetails
@@ -158,8 +160,9 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	type fields struct {
 		ID		int		`bson:"_id"`
 		Name 	int		`bson:"name"`
+		Token 	int		`bson:"responsetoken"`
 	}
-	projection := fields{ID:1,Name:1,}
+	projection := fields{ID:1,Name:1,Token:1,}
 	opt := &options.FindOptions{}
 	opt.SetProjection(projection)
 
@@ -177,7 +180,7 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println(err)
 		}
-		forms = append(forms, formDetails{ID: (&elem).ID.Hex(), Name: (&elem).Name})
+		forms = append(forms, formDetails{ID: (&elem).ID.Hex(), Name: (&elem).Name, Token: (&elem).Token})
 	}
 	log.Println("all forms created by ", rno, " sent")
 	u.Respond(w, forms, 200)
