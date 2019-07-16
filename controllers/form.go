@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -42,6 +43,7 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	// Setup fields
 	assignUids(form)
 	form.Name = form.Pages[0].Title
+	form.Timestamp = time.Now()
 	responseToken := u.RandSeq(50)
 	form.ResponseToken = responseToken
 	collection := u.Collection("forms")
@@ -164,6 +166,7 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	}
 	projection := fields{ID: 1, Name: 1, Token: 1}
 	opt := &options.FindOptions{}
+	opt.SetSort(bson.D{{"timestamp", -1}})
 	opt.SetProjection(projection)
 
 	// Get all form ids for this roll number
