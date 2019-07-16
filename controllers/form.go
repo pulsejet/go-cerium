@@ -188,3 +188,37 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	log.Println("all forms created by ", rno, " sent")
 	u.Respond(w, forms, 200)
 }
+
+var DeleteForm = func(w http.ResponseWriter, r *http.Request) {
+	cid := mux.Vars(r)["id"]
+
+	// Get roll number
+	rno := GetRollNo(w, r, false)
+
+	form := &models.Form{}
+	collection := u.Collection("forms")
+	objID, _ := primitive.ObjectIDFromHex(cid)
+	err := collection.FindOne(u.Context(), bson.M{"_id": objID}).Decode(&form)
+	if err != nil {
+		u.Respond(w, u.Message(false, err.Error()), 400)
+		return
+	}
+
+	if rno != form.Creator {
+		u.Respond(w, u.Message(false, "Only form creator can delete form. Unauthorized access"), 403)
+		return
+	}
+
+	// Delete form
+	_, err = collection.DeleteOne(u.Context(), bson.M{"_id": objID})
+	if err != nil {
+		log.Printf("remove fail %v\n", err)
+	}
+	// Remove responses
+	_, err = u.Collection("responses").DeleteMany(u.Context(), bson.M{"formid": cid})
+	if err != nil {
+		log.Printf("remove fail %v\n", err)
+	}
+	log.Println("Form ", cid, " and its responses deleted")
+	u.Respond(w, u.Message(false, "Form deleted"), 200)
+}
