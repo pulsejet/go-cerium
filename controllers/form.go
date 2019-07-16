@@ -134,18 +134,18 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	// Get roll number
 	rno := GetRollNo(w, r, false)
 
-	// To extrach data out of collection.Find() 
+	// To extrach data out of collection.Find()
 	type formDB struct {
-		ID		primitive.ObjectID		`bson:"_id"`
-		Name 	string					`bson:"name"`
-		Token 	string					`bson:"responsetoken"`
+		ID    primitive.ObjectID `bson:"_id"`
+		Name  string             `bson:"name"`
+		Token string             `bson:"responsetoken"`
 	}
 
-	// To send data to frontend	
+	// To send data to frontend
 	type formDetails struct {
-		ID		string	
-		Name 	string
-		Token 	string
+		ID    string
+		Name  string
+		Token string
 	}
 
 	var forms []formDetails
@@ -158,15 +158,15 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 
 	// To Set which fields are required in the output
 	type fields struct {
-		ID		int		`bson:"_id"`
-		Name 	int		`bson:"name"`
-		Token 	int		`bson:"responsetoken"`
+		ID    int `bson:"_id"`
+		Name  int `bson:"name"`
+		Token int `bson:"responsetoken"`
 	}
-	projection := fields{ID:1,Name:1,Token:1,}
+	projection := fields{ID: 1, Name: 1, Token: 1}
 	opt := &options.FindOptions{}
 	opt.SetProjection(projection)
 
-	// Get all form ids for this roll number 
+	// Get all form ids for this roll number
 	values, err := collection.Find(u.Context(), bson.M{"creator": rno}, opt)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
