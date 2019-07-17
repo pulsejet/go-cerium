@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -23,9 +22,9 @@ func Respond(w http.ResponseWriter, data interface{}, status int) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func Database() *mongo.Database {
+func Database(ctx context.Context) *mongo.Database {
 	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("CONNECTION")))
-	err = client.Connect(Context())
+	err = client.Connect(ctx)
 	if err != nil {
 		fmt.Print(err)
 		return nil
@@ -34,13 +33,8 @@ func Database() *mongo.Database {
 	return client.Database(os.Getenv("DATABASE"))
 }
 
-func Collection(name string) *mongo.Collection {
-	return Database().Collection(name)
-}
-
-func Context() context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	return ctx
+func Collection(ctx context.Context, name string) *mongo.Collection {
+	return Database(ctx).Collection(name)
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
