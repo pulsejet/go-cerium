@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,11 +26,11 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 
 	// Check if login is required
 	rno := GetRollNo(w, r, false)
-	collection := u.Collection("forms")
+	collection := u.Collection(r.Context(), "forms")
 	objID, _ := primitive.ObjectIDFromHex(formid)
 	filt := bson.M{"_id": objID}
 	form := &models.Form{}
-	collection.FindOne(u.Context(), filt).Decode(form)
+	collection.FindOne(r.Context(), filt).Decode(form)
 	if form.RequireLogin && rno == "" {
 		u.Respond(w, u.Message(false, "Not Found"), 401)
 		return
@@ -54,7 +54,7 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if form already filled for single response
-	if form.SingleResponse && HasFilledAnon(formid, rno) {
+	if form.SingleResponse && HasFilledAnon(r.Context(), formid, rno) {
 		u.Respond(w, u.Message(false, "User has already filled this form"), 403)
 		return
 	}
@@ -66,13 +66,13 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 		anonResponse.FormId = formid
 
 		// Add the anon filler to fillers collection
-		collection = u.Collection("filler")
-		collection.InsertOne(u.Context(), anonResponse)
+		collection = u.Collection(r.Context(), "filler")
+		collection.InsertOne(r.Context(), anonResponse)
 	}
 
 	// Add the document to the responses collection
-	collection = u.Collection("responses")
-	cur, _ := collection.InsertOne(u.Context(), response)
+	collection = u.Collection(r.Context(), "responses")
+	cur, _ := collection.InsertOne(r.Context(), response)
 	id := cur.InsertedID
 
 	// Log to console
@@ -95,12 +95,12 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 
 	// Check privileges
 	form := &models.Form{}
-	collection := u.Collection("forms")
+	collection := u.Collection(r.Context(), "forms")
 	objID, _ := primitive.ObjectIDFromHex(formid)
 	filt := bson.M{"$and": bson.A{
 		bson.M{"_id": objID},
-		bson.M{"responsetoken":token}}}
-	err := collection.FindOne(u.Context(), filt).Decode(&form)
+		bson.M{"responsetoken": token}}}
+	err := collection.FindOne(r.Context(), filt).Decode(&form)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
@@ -108,8 +108,8 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 
 	// Get responses
 	responses := []*models.FormResponse{}
-	collection = u.Collection("responses")
-	cur, err := collection.Find(u.Context(), bson.M{"formid": formid})
+	collection = u.Collection(r.Context(), "responses")
+	cur, err := collection.Find(r.Context(), bson.M{"formid": formid})
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
@@ -203,10 +203,10 @@ func primitiveToTime(d primitive.DateTime) time.Time {
 }
 
 // HasFilledAnon returns true if the person has already filled this form
-func HasFilledAnon(formid string, filler string) bool {
+func HasFilledAnon(ctx context.Context, formid string, filler string) bool {
 	// Filter matching form id and filler
-	collection := u.Collection("filler")
-	anonExist := collection.FindOne(u.Context(), bson.M{
+	collection := u.Collection(ctx, "filler")
+	anonExist := collection.FindOne(ctx, bson.M{
 		"$and": bson.A{
 			bson.M{"formid": formid},
 			bson.M{"filler": filler}}})

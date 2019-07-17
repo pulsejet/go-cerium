@@ -45,7 +45,7 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	form.Name = form.Pages[0].Title
 	responseToken := u.RandSeq(50)
 	form.ResponseToken = responseToken
-	collection := u.Collection("forms")
+	collection := u.Collection(r.Context(), "forms")
 
 	// Update or create new
 	var id interface{}
@@ -57,7 +57,7 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 			bson.M{"creator": rno}}}
 
 		var res *mongo.UpdateResult
-		res, err = collection.ReplaceOne(u.Context(), filt, form)
+		res, err = collection.ReplaceOne(r.Context(), filt, form)
 		id = cid
 
 		if res.MatchedCount == 0 {
@@ -68,7 +68,7 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 		form.Creator = rno
 		form.Timestamp = time.Now()
 		var res *mongo.InsertOneResult
-		res, err = collection.InsertOne(u.Context(), form)
+		res, err = collection.InsertOne(r.Context(), form)
 		id = res.InsertedID
 	}
 
@@ -103,9 +103,9 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 	form := &models.Form{}
 
 	// Get the form
-	collection := u.Collection("forms")
+	collection := u.Collection(r.Context(), "forms")
 	objID, _ := primitive.ObjectIDFromHex(id)
-	err := collection.FindOne(u.Context(), bson.M{"_id": objID}).Decode(&form)
+	err := collection.FindOne(r.Context(), bson.M{"_id": objID}).Decode(&form)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
@@ -118,7 +118,7 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if already filled
-	if !form.CanEdit && form.SingleResponse && HasFilledAnon(id, rno) {
+	if !form.CanEdit && form.SingleResponse && HasFilledAnon(r.Context(), id, rno) {
 		u.Respond(w, u.Message(false, "User has already filled this form"), 403)
 		return
 	}
@@ -152,8 +152,8 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 
 	var forms []formDetails
 
-	collection := u.Collection("forms")
-	count, err := collection.CountDocuments(u.Context(), bson.M{"creator": rno})
+	collection := u.Collection(r.Context(), "forms")
+	count, err := collection.CountDocuments(r.Context(), bson.M{"creator": rno})
 	if count == 0 {
 		u.Respond(w, forms, 200)
 	}
@@ -170,7 +170,7 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	opt.SetProjection(projection)
 
 	// Get all form ids for this roll number
-	values, err := collection.Find(u.Context(), bson.M{"creator": rno}, opt)
+	values, err := collection.Find(r.Context(), bson.M{"creator": rno}, opt)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
@@ -185,7 +185,7 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 		}
 		forms = append(forms, formDetails{ID: (&elem).ID.Hex(), Name: (&elem).Name, Token: (&elem).Token})
 	}
-	log.Println("all forms created by ", rno, " sent")
+	log.Println("all forms created by", rno, "sent")
 	u.Respond(w, forms, 200)
 }
 
@@ -196,9 +196,9 @@ var DeleteForm = func(w http.ResponseWriter, r *http.Request) {
 	rno := GetRollNo(w, r, false)
 
 	form := &models.Form{}
-	collection := u.Collection("forms")
+	collection := u.Collection(r.Context(), "forms")
 	objID, _ := primitive.ObjectIDFromHex(cid)
-	err := collection.FindOne(u.Context(), bson.M{"_id": objID}).Decode(&form)
+	err := collection.FindOne(r.Context(), bson.M{"_id": objID}).Decode(&form)
 	if err != nil {
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
@@ -210,15 +210,15 @@ var DeleteForm = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete form
-	_, err = collection.DeleteOne(u.Context(), bson.M{"_id": objID})
+	_, err = collection.DeleteOne(r.Context(), bson.M{"_id": objID})
 	if err != nil {
 		log.Printf("remove fail %v\n", err)
 	}
 	// Remove responses
-	_, err = u.Collection("responses").DeleteMany(u.Context(), bson.M{"formid": cid})
+	_, err = u.Collection(r.Context(), "responses").DeleteMany(r.Context(), bson.M{"formid": cid})
 	if err != nil {
 		log.Printf("remove fail %v\n", err)
 	}
-	log.Println("Form ", cid, " and its responses deleted")
+	log.Println("Form", cid, "and its responses deleted")
 	u.Respond(w, u.Message(false, "Form deleted"), 200)
 }

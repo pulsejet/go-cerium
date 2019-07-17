@@ -54,9 +54,9 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Get profile
-		collection := u.Collection("users")
+		collection := u.Collection(r.Context(), "users")
 		user := &ProfileResponse{}
-		err := collection.FindOne(u.Context(), bson.M{"rollnumber": rno}).Decode(user)
+		err := collection.FindOne(r.Context(), bson.M{"rollnumber": rno}).Decode(user)
 		if err != nil {
 			u.Respond(w, u.Message(false, err.Error()), 500)
 			return
@@ -136,7 +136,7 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 
 	// Save Profile
 	rno := profile_response.RollNumber
-	collection := u.Collection("users")
+	collection := u.Collection(r.Context(), "users")
 
 	// Allow creation
 	var ropts options.ReplaceOptions
@@ -144,7 +144,7 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 
 	// Upsert profile
 	_, err = collection.ReplaceOne(
-		u.Context(), bson.M{"rollnumber": rno}, profile_response, &ropts)
+		r.Context(), bson.M{"rollnumber": rno}, profile_response, &ropts)
 
 	// Set cookie
 	SetCookie(w, rno)
@@ -218,7 +218,7 @@ var Logout = func(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, "", 204)
 }
 
-var SetCookie= func(w http.ResponseWriter, rno string) {
+var SetCookie = func(w http.ResponseWriter, rno string) {
 	// Declare the expiration time of the token
 	expirationTime := time.Now().Add(24 * time.Hour)
 
