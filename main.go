@@ -31,8 +31,10 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	router.HandleFunc("/api/form", controllers.CreateForm).Methods("POST")
+	router.HandleFunc("/api/forms", controllers.GetAllForms).Methods("GET")
 	router.HandleFunc("/api/form/{id}", controllers.CreateForm).Methods("PUT")
 	router.HandleFunc("/api/form/{id}", controllers.GetForm).Methods("GET")
+	router.HandleFunc("/api/form/{id}", controllers.DeleteForm).Methods("DELETE")
 	router.HandleFunc("/api/response/{formid}", controllers.CreateResponse).Methods("POST")
 	router.HandleFunc("/api/responses/{formid}", controllers.GetResponses).Methods("POST")
 

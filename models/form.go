@@ -5,14 +5,15 @@ import (
 )
 
 type Form struct {
-	Name           string `json:"name"`
-	Creator        string `json:"creator"`
-	CanEdit        bool   `json:"can_edit"`
-	Pages          []Page `json:"pages"`
-	RequireLogin   bool   `json:"require_login"`
-	CollectEmail   bool   `json:"collect_email"`
-	SingleResponse bool   `json:"single_response"`
-	ResponseToken  string `json:"-"`
+	Name           string    `json:"name"`
+	Creator        string    `json:"creator"`
+	Timestamp      time.Time `json:"timestamp"`
+	CanEdit        bool      `json:"can_edit"`
+	Pages          []Page    `json:"pages"`
+	RequireLogin   bool      `json:"require_login"`
+	CollectEmail   bool      `json:"collect_email"`
+	SingleResponse bool      `json:"single_response"`
+	ResponseToken  string    `json:"-"`
 }
 
 type Page struct {
