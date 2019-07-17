@@ -155,7 +155,8 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	collection := u.Collection(r.Context(), "forms")
 	count, err := collection.CountDocuments(r.Context(), bson.M{"creator": rno})
 	if count == 0 {
-		u.Respond(w, forms, 200)
+		u.Respond(w, make([]formDetails, 0), 200)
+		return
 	}
 
 	// To Set which fields are required in the output
