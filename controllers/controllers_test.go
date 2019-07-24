@@ -36,8 +36,7 @@ func setup() {
 	err := godotenv.Load("../.env")
 	rno = os.Getenv("TEST_ROLL")
 	if err != nil {
-		fmt.Errorf("Error loading .env file")
-		os.Exit(1)
+		panic(fmt.Errorf("Error loading .env file"))
 	}
 
 	// Create dummy profile

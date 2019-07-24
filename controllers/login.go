@@ -16,11 +16,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// AuthCode : code and redirect uri to POST
 type AuthCode struct {
 	Code        string `json:"code"`
-	RedirectUri string `json:"redirect_uri"`
+	RedirectURI string `json:"redirect_uri"`
 }
 
+// AccessTokenResponse : access token received from SSO
 type AccessTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
@@ -29,8 +31,9 @@ type AccessTokenResponse struct {
 	Scope        string `json:"scope"`
 }
 
+// ProfileResponse : Profile as received from SSO
 type ProfileResponse struct {
-	Id             int    `json:"id"`
+	ID             int    `json:"id"`
 	FirstName      string `json:"first_name"`
 	LastName       string `json:"last_name"`
 	RollNumber     string `json:"roll_number"`
@@ -38,6 +41,7 @@ type ProfileResponse struct {
 	Email          string `json:"email"`
 }
 
+// Claims : JWT claims stored on client side
 type Claims struct {
 	RollNumber string `json:"roll_number"`
 	jwt.StandardClaims
@@ -45,6 +49,7 @@ type Claims struct {
 
 var jwtKey = []byte(os.Getenv("JWT_KEY"))
 
+// Login : API handler for logging in with SSO auth code
 var Login = func(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// Get JWT
@@ -77,12 +82,12 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 
 	// Make request for access token
 	url := os.Getenv("OAUTH_URL")
-	AUTH_TOKEN := os.Getenv("AUTH_TOKEN")
-	AUTH_TEMPLATE := "code=%s&redirect_uri=%s&grant_type=authorization_code"
+	authToken := os.Getenv("AUTH_TOKEN")
+	authTemplate := "code=%s&redirect_uri=%s&grant_type=authorization_code"
 
-	var jsonStr = []byte(fmt.Sprintf(AUTH_TEMPLATE, code.Code, code.RedirectUri))
+	var jsonStr = []byte(fmt.Sprintf(authTemplate, code.Code, code.RedirectURI))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", AUTH_TOKEN))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", authToken))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 
 	// Fire request for access token
@@ -102,8 +107,8 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read the access token
-	access_token_response := &AccessTokenResponse{}
-	err = json.NewDecoder(resp.Body).Decode(access_token_response)
+	accessTokenResponse := &AccessTokenResponse{}
+	err = json.NewDecoder(resp.Body).Decode(accessTokenResponse)
 
 	// Error if we didn't get the access token
 	if err != nil {
@@ -112,11 +117,11 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	PROFILE_URL := os.Getenv("OAUTH_PROFILE")
+	profileURL := os.Getenv("OAUTH_PROFILE")
 
 	// Make request for profile
-	req, err = http.NewRequest("GET", PROFILE_URL, nil)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", access_token_response.AccessToken))
+	req, err = http.NewRequest("GET", profileURL, nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessTokenResponse.AccessToken))
 	resp, err = client.Do(req)
 	if err != nil {
 		log.Println(err)
@@ -126,8 +131,8 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	// Read profile
-	profile_response := &ProfileResponse{}
-	err = json.NewDecoder(resp.Body).Decode(profile_response)
+	profileResponse := &ProfileResponse{}
+	err = json.NewDecoder(resp.Body).Decode(profileResponse)
 	if err != nil {
 		log.Println(err)
 		u.Respond(w, u.Message(false, err.Error()), 500)
@@ -135,7 +140,7 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save Profile
-	rno := profile_response.RollNumber
+	rno := profileResponse.RollNumber
 	collection := u.Collection(r.Context(), "users")
 
 	// Allow creation
@@ -144,15 +149,16 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 
 	// Upsert profile
 	_, err = collection.ReplaceOne(
-		r.Context(), bson.M{"rollnumber": rno}, profile_response, &ropts)
+		r.Context(), bson.M{"rollnumber": rno}, profileResponse, &ropts)
 
 	// Set cookie
 	SetCookie(w, rno)
 
 	// Return profile
-	u.Respond(w, profile_response, 200)
+	u.Respond(w, profileResponse, 200)
 }
 
+// GetRollNo : helper function to get claimed roll number from JWT
 var GetRollNo = func(w http.ResponseWriter, r *http.Request, throw bool) string {
 	c, err := r.Cookie("token")
 	if err != nil {
@@ -206,6 +212,7 @@ var GetRollNo = func(w http.ResponseWriter, r *http.Request, throw bool) string 
 	return claims.RollNumber
 }
 
+// Logout : API handler for logging out
 var Logout = func(w http.ResponseWriter, r *http.Request) {
 	// Finally, we set the client cookie for "token" as the JWT we just generated
 	http.SetCookie(w, &http.Cookie{
@@ -218,6 +225,7 @@ var Logout = func(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, "", 204)
 }
 
+// SetCookie : helper function to set JWT cookie
 var SetCookie = func(w http.ResponseWriter, rno string) {
 	// Declare the expiration time of the token
 	expirationTime := time.Now().Add(24 * time.Hour)

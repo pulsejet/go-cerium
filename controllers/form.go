@@ -18,6 +18,7 @@ import (
 	u "github.com/pulsejet/go-cerium/utils"
 )
 
+// CreateForm : API handler for POST-ing new forms
 var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
 	rno := GetRollNo(w, r, true)
@@ -97,6 +98,7 @@ func assignUids(form *models.Form) {
 	}
 }
 
+// GetForm : API handler for getting one form
 var GetForm = func(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
@@ -132,6 +134,7 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, form, 200)
 }
 
+// GetAllForms : API handler for getting all forms of the logged in user
 var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	// Get roll number
 	rno := GetRollNo(w, r, false)
@@ -190,6 +193,7 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, forms, 200)
 }
 
+// DeleteForm : API handler for deleting a form
 var DeleteForm = func(w http.ResponseWriter, r *http.Request) {
 	cid := mux.Vars(r)["id"]
 

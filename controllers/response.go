@@ -17,10 +17,12 @@ import (
 	u "github.com/pulsejet/go-cerium/utils"
 )
 
+// ResponsesRequest : helper for post processing
 type ResponsesRequest struct {
 	Type string `json:"type"`
 }
 
+// CreateResponse : API handler for POST-ing new response
 var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	formid := mux.Vars(r)["formid"]
 
@@ -81,6 +83,7 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, map[string]interface{}{"id": id}, 200)
 }
 
+// GetResponses : API handler for getting JSON responses (for CSV)
 var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
 	rno := GetRollNo(w, r, true)
