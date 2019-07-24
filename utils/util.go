@@ -17,7 +17,7 @@ func Message(status bool, message string) map[string]interface{} {
 	return map[string]interface{}{"status": status, "message": message}
 }
 
-// Responsd : respond with JSON data and status code
+// Respond : respond with JSON data and status code
 func Respond(w http.ResponseWriter, data interface{}, status int) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
