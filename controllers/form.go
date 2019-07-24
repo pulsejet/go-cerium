@@ -91,8 +91,8 @@ func assignUids(form *models.Form) {
 	for i := 0; i < len(form.Pages); i++ {
 		for j := 0; j < len(form.Pages[i].Widgets); j++ {
 			w := &form.Pages[i].Widgets[j]
-			if w.Uid == "" {
-				w.Uid = u.RandomId()
+			if w.UID == "" {
+				w.UID = u.RandomID()
 			}
 		}
 	}

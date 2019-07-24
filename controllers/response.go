@@ -47,7 +47,7 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fill in the responses
-	response.FormId = formid
+	response.FormID = formid
 	response.Timestamp = time.Now()
 	response.Responses["timestamp"] = response.Timestamp
 	if form.CollectEmail {
@@ -65,7 +65,7 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	if form.RequireLogin {
 		anonResponse := &models.FormAnonResponder{}
 		anonResponse.Filler = rno
-		anonResponse.FormId = formid
+		anonResponse.FormID = formid
 
 		// Add the anon filler to fillers collection
 		collection = u.Collection(r.Context(), "filler")
@@ -192,8 +192,8 @@ func formFields(f *models.Form) ([]string, map[string]string) {
 	// Construct fields
 	for pi := range f.Pages {
 		for wi := range f.Pages[pi].Widgets {
-			m[f.Pages[pi].Widgets[wi].Uid] = f.Pages[pi].Widgets[wi].Props["question"].(string)
-			a = append(a, f.Pages[pi].Widgets[wi].Uid)
+			m[f.Pages[pi].Widgets[wi].UID] = f.Pages[pi].Widgets[wi].Props["question"].(string)
+			a = append(a, f.Pages[pi].Widgets[wi].UID)
 		}
 	}
 
