@@ -12,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var dbref *mongo.Database
+
 // Message : a status message possibly representing an error
 func Message(status bool, message string) map[string]interface{} {
 	return map[string]interface{}{"status": status, "message": message}
@@ -26,7 +28,17 @@ func Respond(w http.ResponseWriter, data interface{}, status int) {
 
 // Database : Get pointer to database with context
 func Database(ctx context.Context) *mongo.Database {
-	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("CONNECTION")))
+	// Reuse reference
+	if dbref != nil {
+		return dbref;
+	}
+
+	// Setup options
+	options := options.Client().ApplyURI(os.Getenv("CONNECTION"))
+	options.SetMaxPoolSize(10)
+
+	// Create client
+	client, err := mongo.NewClient(options)
 	if err != nil {
 		fmt.Print(err)
 		return nil
@@ -37,7 +49,8 @@ func Database(ctx context.Context) *mongo.Database {
 		return nil
 	}
 
-	return client.Database(os.Getenv("DATABASE"))
+	dbref = client.Database(os.Getenv("DATABASE"))
+	return dbref
 }
 
 // Collection : get pointer to collection with context
