@@ -46,6 +46,8 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	form.Name = form.Pages[0].Title
 	responseToken := u.RandSeq(50)
 	form.ResponseToken = responseToken
+	cl_date := form.CloseOn
+	log.Println("closing date ", cl_date)
 	collection := u.Collection(r.Context(), "forms")
 
 	// Update or create new
