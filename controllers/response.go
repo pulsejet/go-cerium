@@ -39,7 +39,8 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return error if form is closed
-	if form.IsClosed {
+	year2000 := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	if form.IsClosed || time.Now().UTC().After(form.CloseOn) && year2000.Before(form.CloseOn) {
 		u.Respond(w, u.Message(false, "Form Closed"), 404)
 		return
 	}
