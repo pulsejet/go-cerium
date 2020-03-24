@@ -14,6 +14,8 @@ type Form struct {
 	RequireLogin   bool      `json:"require_login"`
 	CollectEmail   bool      `json:"collect_email"`
 	SingleResponse bool      `json:"single_response"`
+	IsClosed       bool      `json:"is_closed"`
+	CloseOn        time.Time `json:"close_on"`
 	ResponseToken  string    `json:"-"`
 }
 

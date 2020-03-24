@@ -131,6 +131,11 @@ var GetForm = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	year2000 := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	if time.Now().UTC().After(form.CloseOn) && year2000.Before(form.CloseOn) {
+		form.IsClosed = true
+	}
+
 	u.Respond(w, form, 200)
 }
 

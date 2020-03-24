@@ -38,6 +38,13 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Return error if form is closed
+	year2000 := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	if form.IsClosed || time.Now().UTC().After(form.CloseOn) && year2000.Before(form.CloseOn) {
+		u.Respond(w, u.Message(false, "Form Closed"), 404)
+		return
+	}
+
 	// Save the response
 	response := &models.FormResponse{}
 	err := json.NewDecoder(r.Body).Decode(response)
