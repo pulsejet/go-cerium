@@ -45,4 +45,5 @@ jobs:
     - name: Test
       run: |
         cd $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
+        ls -la
         go test -v ./...
