@@ -25,6 +25,7 @@ jobs:
         path: $GOPATH/src/github.com/$GITHUB_REPOSITORY
 
     - name: Get dependencies
+      working-directory: $GOPATH/src/github.com/$GITHUB_REPOSITORY
       run: |
         go get -v -t -d ./...
         if [ -f Gopkg.toml ]; then
@@ -33,7 +34,9 @@ jobs:
         fi
 
     - name: Build
+      working-directory: $GOPATH/src/github.com/$GITHUB_REPOSITORY
       run: go build -v .
 
     - name: Test
+      working-directory: $GOPATH/src/github.com/$GITHUB_REPOSITORY
       run: go test -v ./...
