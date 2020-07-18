@@ -25,7 +25,7 @@ jobs:
     - name: Path Correction
       run: |
         mkdir -p $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
-        mv $(pwd)/* $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
+        mv $(pwd) $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
         cd $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
 
     - name: Get dependencies
@@ -45,5 +45,4 @@ jobs:
     - name: Test
       run: |
         cd $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
-        ls -la
         go test -v ./...
