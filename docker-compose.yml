@@ -1,0 +1,28 @@
+version: '3'
+
+services: 
+    mongo:
+        image: mongo
+        ports:
+            - 27017:27017
+        volumes: 
+            - ~/mongodata:/data/db
+
+    go-cerium:
+        image: eaakash/gocerium:latest      # go-cerium build
+        env_file: .env
+        environment:
+            - CONNECTION=mongodb://mongo:27017
+        ports: 
+            - 8000:8000
+        depends_on: 
+            - mongo
+
+    cerium:
+        image: eaakash/cerium:latest        # cerium build
+        ports:
+            - 4200:80
+        depends_on: 
+            - go-cerium
+        links: 
+            - go-cerium
