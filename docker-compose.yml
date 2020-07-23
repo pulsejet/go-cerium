@@ -11,11 +11,11 @@ services:
     go-cerium:
         image: eaakash/gocerium:latest      # go-cerium build
         env_file: .env
+        environment:
+            - CONNECTION=mongodb://mongo:27017
         ports: 
             - 8000:8000
         depends_on: 
-            - mongo
-        links: 
             - mongo
 
     cerium:
