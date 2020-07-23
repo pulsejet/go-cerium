@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mongodb:
+      mongo:
         image: mongo
         ports:
         - 27017:27017
@@ -34,9 +34,7 @@ jobs:
         mkdir -p $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
         cp -r $(pwd)/. $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
         cd $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
-        pwd
-        ls -la
-
+        
     - name: Get dependencies
       run: |
         cd $(go env GOPATH)/src/github.com/$GITHUB_REPOSITORY
