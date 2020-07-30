@@ -223,12 +223,12 @@ var DeleteForm = func(w http.ResponseWriter, r *http.Request) {
 	// Delete form
 	_, err = collection.DeleteOne(r.Context(), bson.M{"_id": objID})
 	if err != nil {
-		log.Error("remove fail %v\n", err)
+		log.Error("remove fail of form ", cid)
 	}
 	// Remove responses
 	_, err = u.Collection(r.Context(), "responses").DeleteMany(r.Context(), bson.M{"formid": cid})
 	if err != nil {
-		log.Error("remove fail %v\n", err)
+		log.Error("remove fail of responses of ", cid)
 	}
 	log.Info("Form", cid, "and its responses deleted")
 	u.Respond(w, u.Message(false, "Form deleted"), 200)
