@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 	"github.com/pulsejet/go-cerium/controllers"
@@ -65,7 +66,17 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-        // Create new router
+	// Logging options
+	customFormatter := new(log.TextFormatter)
+	customFormatter.FullTimestamp = true
+	log.SetFormatter(customFormatter)
+	logLevel, err := log.ParseLevel(os.Getenv("LOG_LEVEL"))
+	if err != nil {
+		logLevel = log.InfoLevel
+	}
+	log.SetLevel(logLevel)
+
+	// Create new router
 	router := mux.NewRouter()
 
 	port := os.Getenv("PORT")
@@ -73,7 +84,7 @@ func main() {
 		port = "8000"
 	}
 
-	fmt.Println("Started server on port", port)
+	log.Info("Started server on port ", port)
 	rand.Seed(time.Now().UnixNano())
 
         // Handle API calls

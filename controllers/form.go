@@ -3,9 +3,10 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -30,7 +31,7 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 	form := &models.Form{}
 	err := json.NewDecoder(r.Body).Decode(form)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
 	}
@@ -75,13 +76,13 @@ var CreateForm = func(w http.ResponseWriter, r *http.Request) {
 
 	// Check for errors and return form id
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		u.Respond(w, u.Message(false, err.Error()), 400)
 		return
 	}
 
 	// Log to console
-	log.Println(rno, ": new form", id)
+	log.Debug(rno, ": new form ", id)
 
 	u.Respond(w, map[string]interface{}{"id": id, "token": responseToken}, 200)
 }
@@ -190,11 +191,11 @@ var GetAllForms = func(w http.ResponseWriter, r *http.Request) {
 		var elem formDB
 		err := values.Decode(&elem)
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 		forms = append(forms, formDetails{ID: (&elem).ID.Hex(), Name: (&elem).Name, Token: (&elem).Token})
 	}
-	log.Println("all forms created by", rno, "sent")
+	log.Debug("all forms created by ", rno, " sent")
 	u.Respond(w, forms, 200)
 }
 
@@ -222,13 +223,13 @@ var DeleteForm = func(w http.ResponseWriter, r *http.Request) {
 	// Delete form
 	_, err = collection.DeleteOne(r.Context(), bson.M{"_id": objID})
 	if err != nil {
-		log.Printf("remove fail %v\n", err)
+		log.Error("remove fail %v\n", err)
 	}
 	// Remove responses
 	_, err = u.Collection(r.Context(), "responses").DeleteMany(r.Context(), bson.M{"formid": cid})
 	if err != nil {
-		log.Printf("remove fail %v\n", err)
+		log.Error("remove fail %v\n", err)
 	}
-	log.Println("Form", cid, "and its responses deleted")
+	log.Info("Form", cid, "and its responses deleted")
 	u.Respond(w, u.Message(false, "Form deleted"), 200)
 }
