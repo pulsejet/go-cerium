@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -85,7 +86,7 @@ var CreateResponse = func(w http.ResponseWriter, r *http.Request) {
 	id := cur.InsertedID
 
 	// Log to console
-	log.Println(rno, ": new response for form", formid)
+	log.Debug(rno, ": new response for form", formid)
 
 	u.Respond(w, map[string]interface{}{"id": id}, 200)
 }
@@ -130,7 +131,7 @@ var GetResponses = func(w http.ResponseWriter, r *http.Request) {
 		var elem models.FormResponse
 		err := cur.Decode(&elem)
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 		responses = append(responses, &elem)
 	}

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -94,7 +95,7 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		u.Respond(w, u.Message(false, err.Error()), 401)
 		return
 	}
@@ -112,7 +113,7 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 
 	// Error if we didn't get the access token
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		u.Respond(w, u.Message(false, err.Error()), 500)
 		return
 	}
@@ -124,7 +125,7 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessTokenResponse.AccessToken))
 	resp, err = client.Do(req)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		u.Respond(w, u.Message(false, err.Error()), 500)
 		return
 	}
@@ -134,7 +135,7 @@ var Login = func(w http.ResponseWriter, r *http.Request) {
 	profileResponse := &ProfileResponse{}
 	err = json.NewDecoder(resp.Body).Decode(profileResponse)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		u.Respond(w, u.Message(false, err.Error()), 500)
 		return
 	}
